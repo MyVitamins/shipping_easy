@@ -13,21 +13,21 @@ if (!function_exists('mb_detect_encoding')) {
   throw new Exception('ShippingEasy needs the Multibyte String PHP extension.');
 }
 
-require(dirname(__FILE__) . '/ShippingEasy/ShippingEasy.php');
+require(__DIR__ . '/ShippingEasy/ShippingEasy.php');
 
 // Errors
-require(dirname(__FILE__) . '/ShippingEasy/Error.php');
-require(dirname(__FILE__) . '/ShippingEasy/ApiError.php');
-require(dirname(__FILE__) . '/ShippingEasy/ApiConnectionError.php');
-require(dirname(__FILE__) . '/ShippingEasy/AuthenticationError.php');
-require(dirname(__FILE__) . '/ShippingEasy/InvalidRequestError.php');
+require(__DIR__ . '/ShippingEasy/Error.php');
+require(__DIR__ . '/ShippingEasy/ApiError.php');
+require(__DIR__ . '/ShippingEasy/ApiConnectionError.php');
+require(__DIR__ . '/ShippingEasy/AuthenticationError.php');
+require(__DIR__ . '/ShippingEasy/InvalidRequestError.php');
 
-require(dirname(__FILE__) . '/ShippingEasy/ApiRequestor.php');
-require(dirname(__FILE__) . '/ShippingEasy/Authenticator.php');
-require(dirname(__FILE__) . '/ShippingEasy/Object.php');
-require(dirname(__FILE__) . '/ShippingEasy/Order.php');
-require(dirname(__FILE__) . '/ShippingEasy/PartnerSession.php');
-require(dirname(__FILE__) . '/ShippingEasy/PartnerAccount.php');
-require(dirname(__FILE__) . '/ShippingEasy/Signature.php');
-require(dirname(__FILE__) . '/ShippingEasy/SignedUrl.php');
-require(dirname(__FILE__) . '/ShippingEasy/Cancellation.php');
+require(__DIR__ . '/ShippingEasy/ApiRequestor.php');
+require(__DIR__ . '/ShippingEasy/Authenticator.php');
+require(__DIR__ . '/ShippingEasy/Object.php');
+require(__DIR__ . '/ShippingEasy/Order.php');
+require(__DIR__ . '/ShippingEasy/PartnerSession.php');
+require(__DIR__ . '/ShippingEasy/PartnerAccount.php');
+require(__DIR__ . '/ShippingEasy/Signature.php');
+require(__DIR__ . '/ShippingEasy/SignedUrl.php');
+require(__DIR__ . '/ShippingEasy/Cancellation.php');

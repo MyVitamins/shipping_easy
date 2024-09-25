@@ -8,7 +8,7 @@ abstract class ShippingEasy
   public static $partnerApiSecret;
   public static $apiBase = 'https://api.shippingeasy.com';
   public static $apiVersion = null;
-  const VERSION = '0.4.3';
+  final const VERSION = '0.4.3';
 
   public static function getApiKey()
   {

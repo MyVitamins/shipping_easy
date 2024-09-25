@@ -18,7 +18,7 @@ class ShippingEasy_ApiRequestor
     if (!is_array($arr))
       return $arr;
 
-    $r = array();
+    $r = [];
     foreach ($arr as $k => $v) {
       if (is_null($v))
         continue;
@@ -29,9 +29,9 @@ class ShippingEasy_ApiRequestor
         $k = $prefix."[]";
 
       if (is_array($v)) {
-        $r[] = self::encode($v, $k, true);
+        $r[] = self::encode($v, $k);
       } else {
-        $r[] = urlencode($k)."=".urlencode($v);
+        $r[] = urlencode($k)."=".urlencode((string) $v);
       }
     }
 
@@ -40,7 +40,7 @@ class ShippingEasy_ApiRequestor
 
   public function request($meth, $path, $params=null, $payload = null, $apiKey = null, $apiSecret = null)
   {
-    list($rbody, $rcode) = $this->_requestRaw($meth, $path, $params, $payload, $apiKey, $apiSecret);
+    [$rbody, $rcode] = $this->_requestRaw($meth, $path, $params, $payload, $apiKey, $apiSecret);
     $resp = $this->_interpretResponse($rbody, $rcode);
     return $resp;
   }
@@ -52,11 +52,11 @@ class ShippingEasy_ApiRequestor
       throw new ShippingEasy_ApiError("Invalid response object from API: $rbody (HTTP response code was $rcode)", $rcode, $rbody, $resp);
 
     $error = $resp['errors'];
-    $message = isset($error[0]['message']) ? $error[0]['message'] : null;
+    $message = $error[0]['message'] ?? null;
 
     switch ($rcode) {
     case 400:
-      throw new ShippingEasy_InvalidRequestError(json_encode($error), $rcode, $rbody, $resp);
+      throw new ShippingEasy_InvalidRequestError(json_encode($error, JSON_THROW_ON_ERROR), $rcode, $rbody, $resp);
     case 404:
       throw new ShippingEasy_InvalidRequestError($message, $rcode, $rbody, $resp);
     case 401:
@@ -74,28 +74,22 @@ class ShippingEasy_ApiRequestor
     $langVersion = phpversion();
     $uname = php_uname();
 
-    $ua = array('bindings_version' => ShippingEasy::VERSION,
-		            'lang' => 'php',
-            		'lang_version' => $langVersion,
-            		'publisher' => 'ShippingEasy',
-            		'uname' => $uname);
+    $ua = ['bindings_version' => ShippingEasy::VERSION, 'lang' => 'php', 'lang_version' => $langVersion, 'publisher' => 'ShippingEasy', 'uname' => $uname];
 
-    $headers = array('X-ShippingEasy-Client-User-Agent: ' . json_encode($ua),
-                     'User-Agent: ShippingEasy/v1 PhpBindings/' . ShippingEasy::VERSION,
-                     'Authorization: Bearer ' . $apiKey);
+    $headers = ['X-ShippingEasy-Client-User-Agent: ' . json_encode($ua, JSON_THROW_ON_ERROR), 'User-Agent: ShippingEasy/v1 PhpBindings/' . ShippingEasy::VERSION, 'Authorization: Bearer ' . $apiKey];
 
     if (ShippingEasy::$apiVersion)
       $headers[] = 'ShippingEasy-Version: ' . ShippingEasy::$apiVersion;
 
-    list($rbody, $rcode) = $this->_curlRequest($http_method, $absUrl, $headers, $payload);
-    return array($rbody, $rcode);
+    [$rbody, $rcode] = $this->_curlRequest($http_method, $absUrl, $headers, $payload);
+    return [$rbody, $rcode];
   }
 
   private function _interpretResponse($rbody, $rcode)
   {
     try {
-      $resp = json_decode($rbody, true);
-    } catch (Exception $e) {
+      $resp = json_decode((string) $rbody, true, 512, JSON_THROW_ON_ERROR);
+    } catch (Exception) {
       throw new ShippingEasy_ApiError("Invalid response body from API: $rbody (HTTP response code was $rcode)", $rcode, $rbody);
     }
     if ($rcode < 200 || $rcode >= 300) {
@@ -106,16 +100,17 @@ class ShippingEasy_ApiRequestor
 
   private function _curlRequest($meth, $absUrl, $headers, $payload)
   {
+    $params = null;
     $curl = curl_init();
-    $meth = strtolower($meth);
-    $opts = array();
+    $meth = strtolower((string) $meth);
+    $opts = [];
 
     if ($meth == 'get') {
       $opts[CURLOPT_HTTPGET] = 1;
     } else if ($meth == 'post') {
       $opts[CURLOPT_POST] = 1;
       if ($payload)
-        $payload = json_encode($payload);
+        $payload = json_encode($payload, JSON_THROW_ON_ERROR);
 
       $headers[] = 'Content-Type: application/json';
       $headers[] = 'Content-Length: ' . strlen($payload);
@@ -123,14 +118,14 @@ class ShippingEasy_ApiRequestor
     } else if ($meth == 'put') {
       $opts[CURLOPT_CUSTOMREQUEST] = 'PUT';
       if ($payload)
-        $payload = json_encode($payload);
+        $payload = json_encode($payload, JSON_THROW_ON_ERROR);
 
       $headers[] = 'Content-Type: application/json';
       $headers[] = 'Content-Length: ' . strlen($payload);
       $opts[CURLOPT_POSTFIELDS] = $payload;
     } else if ($meth == 'delete')  {
       $opts[CURLOPT_CUSTOMREQUEST] = 'DELETE';
-      if (count($params) > 0) {
+      if (($params === null ? 0 : count($params)) > 0) {
 	      $encoded = self::encode($params);
 	      $absUrl = "$absUrl?$encoded";
       }
@@ -160,25 +155,17 @@ class ShippingEasy_ApiRequestor
 
     $rcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-    return array($rbody, $rcode);
+    return [$rbody, $rcode];
   }
 
   public function handleCurlError($errno, $message)
   {
     $apiBase = ShippingEasy::$apiBase;
-    switch ($errno) {
-    case CURLE_COULDNT_CONNECT:
-    case CURLE_COULDNT_RESOLVE_HOST:
-    case CURLE_OPERATION_TIMEOUTED:
-      $msg = "Could not connect to ShippingEasy ($apiBase).  Please check your internet connection and try again.  If this problem persists, let us know at support@shippingeasy.com.";
-      break;
-    case CURLE_SSL_CACERT:
-    case CURLE_SSL_PEER_CERTIFICATE:
-      $msg = "Could not verify ShippingEasy's SSL certificate.  Please make sure that your network is not intercepting certificates.  (Try going to $apiBase in your browser.)  If this problem persists, let us know at support@shippingeasy.com.";
-      break;
-    default:
-      $msg = "Unexpected error communicating with ShippingEasy.  If this problem persists, let us know at support@shippingeasy.com.";
-    }
+    $msg = match ($errno) {
+        CURLE_COULDNT_CONNECT, CURLE_COULDNT_RESOLVE_HOST, CURLE_OPERATION_TIMEOUTED => "Could not connect to ShippingEasy ($apiBase).  Please check your internet connection and try again.  If this problem persists, let us know at support@shippingeasy.com.",
+        CURLE_SSL_CACERT, CURLE_SSL_PEER_CERTIFICATE => "Could not verify ShippingEasy's SSL certificate.  Please make sure that your network is not intercepting certificates.  (Try going to $apiBase in your browser.)  If this problem persists, let us know at support@shippingeasy.com.",
+        default => "Unexpected error communicating with ShippingEasy.  If this problem persists, let us know at support@shippingeasy.com.",
+    };
 
     $msg .= "\n\n(Network error [errno $errno]: $message)";
     throw new ShippingEasy_ApiConnectionError($msg);

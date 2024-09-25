@@ -2,7 +2,9 @@
 
 class ShippingEasy_Authenticator
 {
-  
+  public $supplied_signature_string;
+  public $expected_signature;
+
   # Instantiates a new authenticator object. 
   # 
   # http_method - The method of the http request. E.g. "post" or "get".
@@ -13,7 +15,7 @@ class ShippingEasy_Authenticator
   #
   public function __construct($http_method=null, $path=null, $params=null, $json_body=null, $api_secret=null)
   {
-    $api_secret = isset($api_secret) ? $api_secret : ShippingEasy::$apiSecret;
+    $api_secret ??= ShippingEasy::$apiSecret;
     $this->supplied_signature_string = $params["api_signature"];
     unset($params["api_signature"]);
     $this->expected_signature = new ShippingEasy_Signature($api_secret, $http_method, $path, $params, $json_body);

@@ -2,10 +2,16 @@
 
 class ShippingEasy_Signature
 {
+  public $api_secret;
+  public $http_method;
+  public $path;
+  public $params;
+  public $json_body;
+
   public function __construct($api_secret=null, $http_method=null, $path=null, $params=null, $json_body=null)
   {
     $this->api_secret = $api_secret;
-    $this->http_method = strtoupper($http_method);
+    $this->http_method = strtoupper((string) $http_method);
     $this->path = $path;
     ksort($params);
     $this->params = $params;
@@ -13,7 +19,7 @@ class ShippingEasy_Signature
     if (is_string($json_body)) {
       $this->json_body = str_replace("\/","/", $json_body);
     } else {
-      $this->json_body = json_encode($json_body);
+      $this->json_body = json_encode($json_body, JSON_THROW_ON_ERROR);
     }
   }
 
@@ -44,7 +50,7 @@ class ShippingEasy_Signature
 
   public function plaintext()
   {
-    $parts = array($this->getHttpMethod());
+    $parts = [$this->getHttpMethod()];
     $parts[] = $this->getPath();
     
     if (!empty($this->getParams()))
@@ -58,7 +64,7 @@ class ShippingEasy_Signature
 
   public function encrypted()
   {
-    return hash_hmac('sha256', $this->plaintext(), $this->getApiSecret());
+    return hash_hmac('sha256', (string) $this->plaintext(), (string) $this->getApiSecret());
   }
 
   public function equals($signature)

@@ -2,6 +2,8 @@
 
 class ShippingEasy_Cancellation extends ShippingEasy_Object
 {
+  public $store_api_key;
+  public $external_order_identifier;
 
   public function __construct($store_api_key, $external_order_identifier) {
     $this->store_api_key = $store_api_key;
